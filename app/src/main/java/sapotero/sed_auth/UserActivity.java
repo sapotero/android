@@ -1,6 +1,7 @@
 package sapotero.sed_auth;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
@@ -9,6 +10,13 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -16,7 +24,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class UserActivity extends AppCompatActivity {
-  public final static String TOKEN = "";
+  static String TOKEN = "";
+  static String USER  = "";
+  static String DOCUMENTS_URL = LoginActivity.HOST + "v3/documents.json";
 
   private Timer timer;
 
@@ -28,7 +38,8 @@ public class UserActivity extends AppCompatActivity {
 
     Intent intent = getIntent();
     String message = intent.getStringExtra(LoginActivity.EXTRA_MESSAGE);
-    System.out.println( message );
+    USER = intent.getStringExtra(LoginActivity.USER_MESSAGE);
+    TOKEN = message;
 
     TextView data = (TextView)findViewById(R.id.data);
     data.setText( message );
@@ -90,6 +101,53 @@ public class UserActivity extends AppCompatActivity {
       Log.i("Main", "cancel timer");
       timer = null;
     }
+  }
+
+  public void getDocuments(View view){
+
+    RequestQueue queue = Volley.newRequestQueue(this);
+
+    Uri.Builder builder = new Uri.Builder();
+    builder.scheme("http")
+        .authority( "mobile.esd.n-core.ru" )
+        .appendPath("v3")
+        .appendPath("documents.json")
+        .appendQueryParameter("login", USER)
+        .appendQueryParameter("auth_token", TOKEN)
+        .appendQueryParameter("request_uid", getMd5Hash( System.nanoTime() + LoginActivity.getUniqueID() ) );
+
+    String url = builder.build().toString();
+
+    StringRequest documentsRequest = new StringRequest(Request.Method.GET, url,
+        new Response.Listener<String>() {
+          @Override
+          public void onResponse(String response) {
+            Log.e("HttpClient", "success! response: " + response.toString());
+          }
+        },
+        new Response.ErrorListener() {
+          @Override
+          public void onErrorResponse(VolleyError error) {
+            Log.e("HttpClient", "error: " + error.toString());
+          }
+        });
+// for post params
+//    {
+//      @Override
+//      protected Map<String,String> getParams(){
+//        Map<String,String> params = new HashMap<String, String>();
+//        params.put("user","YOUR USERNAME");
+//        params.put("pass","YOUR PASSWORD");
+//        return params;
+//      }
+//      @Override
+//      public Map<String, String> getHeaders() throws AuthFailureError {
+//        Map<String,String> params = new HashMap<String, String>();
+//        params.put("Content-Type","application/x-www-form-urlencoded");
+//        return params;
+//      }
+//    };
+    queue.add(documentsRequest);
   }
 
   private class LogOutTimerTask extends TimerTask {

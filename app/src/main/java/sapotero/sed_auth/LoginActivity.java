@@ -16,16 +16,18 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
 
 import java.util.UUID;
 
 public class LoginActivity extends AppCompatActivity {
 
   public final static String EXTRA_MESSAGE = "MESSAGE";
+  public final static String USER_MESSAGE  = "USER_MESSAGE";
+
   public final static String HOST = "http://mobile.esd.n-core.ru/";
 
   public final static String TOKEN_URL  = "http://mobile.esd.n-core.ru/token/";
-  public final static String REPORT_URL = "/v3/documents.json?status_code=sent_to_the_report";
   public ProgressDialog progressDialog;
 
   @Override
@@ -56,7 +58,7 @@ public class LoginActivity extends AppCompatActivity {
 
   }
 
-  public void sendLoginRequest( String username, String password){
+  public void sendLoginRequest( final String username, String password){
     final Intent intent = new Intent(this, UserActivity.class);
     final Context context= this;
 
@@ -67,8 +69,12 @@ public class LoginActivity extends AppCompatActivity {
         new Response.Listener<String>() {
           @Override
           public void onResponse(String response) {
+
+            AuthTokenJson token = new Gson().fromJson(response, AuthTokenJson.class);
+
+            intent.putExtra( EXTRA_MESSAGE, token.getToken() );
             progressDialog.dismiss();
-            intent.putExtra( EXTRA_MESSAGE, response );
+            intent.putExtra( USER_MESSAGE, username);
             startActivity(intent);
             onLoginSuccess();
           }
