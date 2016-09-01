@@ -12,9 +12,13 @@ import android.widget.Toast;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class UserActivity extends AppCompatActivity {
   public final static String TOKEN = "";
+
+  private Timer timer;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +70,39 @@ public class UserActivity extends AppCompatActivity {
   public void logUniqId(View view) {
     String message = getMd5Hash( System.nanoTime() + LoginActivity.getUniqueID() );
     Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+  }
+
+  @Override
+  protected void onPause() {
+    super.onPause();
+
+    timer = new Timer();
+    Log.i("Main", "Invoking logout timer");
+    LogOutTimerTask logoutTimeTask = new LogOutTimerTask();
+    timer.schedule(logoutTimeTask, 1*60*1000 ); //auto logout in 1 minute
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+    if (timer != null) {
+      timer.cancel();
+      Log.i("Main", "cancel timer");
+      timer = null;
+    }
+  }
+
+  private class LogOutTimerTask extends TimerTask {
+
+    @Override
+    public void run() {
+
+      //redirect user to login screen
+      Intent i = new Intent(UserActivity.this, LoginActivity.class);
+      i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+      startActivity(i);
+      finish();
+    }
   }
 
 }
