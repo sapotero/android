@@ -5,6 +5,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -16,12 +18,19 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import sapotero.sed_auth.Adapter.DocumentItemDecorator;
+import sapotero.sed_auth.Adapter.RecyclerAdapter;
+import sapotero.sed_auth.JSON.Documents.Document;
+import sapotero.sed_auth.JSON.Documents.Documents;
 
 public class UserActivity extends AppCompatActivity {
   static String TOKEN = "";
@@ -29,6 +38,17 @@ public class UserActivity extends AppCompatActivity {
   static String DOCUMENTS_URL = LoginActivity.HOST + "v3/documents.json";
 
   private Timer timer;
+
+  private final String TAG = "MainActivity";
+  private RecyclerView recyclerView;
+  private LinearLayoutManager layoutManager;
+  private RecyclerAdapter adapter;
+
+
+  /* ------------------------------------- */
+
+
+
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +67,14 @@ public class UserActivity extends AppCompatActivity {
 
     message = getMd5Hash( SystemClock.currentThreadTimeMillis() + LoginActivity.getUniqueID() );
     Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+
+    recyclerView = (RecyclerView)findViewById(R.id.recycler_view);
+    recyclerView.addItemDecoration(new DocumentItemDecorator(this));
+    layoutManager = new LinearLayoutManager(UserActivity.this);
+    recyclerView.setLayoutManager(layoutManager);
+
   }
+
 
   @Override
   public void onBackPressed() {
@@ -114,6 +141,7 @@ public class UserActivity extends AppCompatActivity {
         .appendPath("documents.json")
         .appendQueryParameter("login", USER)
         .appendQueryParameter("auth_token", TOKEN)
+        .appendQueryParameter("status_code", "sent_to_the_report")
         .appendQueryParameter("request_uid", getMd5Hash( System.nanoTime() + LoginActivity.getUniqueID() ) );
 
     String url = builder.build().toString();
@@ -123,6 +151,18 @@ public class UserActivity extends AppCompatActivity {
           @Override
           public void onResponse(String response) {
             Log.e("HttpClient", "success! response: " + response.toString());
+
+            Gson gson = new Gson();
+            Documents json = gson.fromJson(response, Documents.class);
+
+
+            List<Document> documents = json.getDocuments();
+            Log.i( "META", json.getMeta().getTotal() );
+//            Log.v( "doc", documents.get(0).getMd5() );
+
+            adapter = new RecyclerAdapter(UserActivity.this, documents);
+            recyclerView.setAdapter(adapter);
+
           }
         },
         new Response.ErrorListener() {

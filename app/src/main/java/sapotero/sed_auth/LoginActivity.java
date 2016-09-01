@@ -20,6 +20,8 @@ import com.google.gson.Gson;
 
 import java.util.UUID;
 
+import sapotero.sed_auth.JSON.AuthTokenJson;
+
 public class LoginActivity extends AppCompatActivity {
 
   public final static String EXTRA_MESSAGE = "MESSAGE";

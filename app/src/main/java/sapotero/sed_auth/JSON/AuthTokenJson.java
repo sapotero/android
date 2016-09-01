@@ -1,4 +1,4 @@
-package sapotero.sed_auth;
+package sapotero.sed_auth.JSON;
 
 import com.google.gson.annotations.SerializedName;
 
